@@ -19,6 +19,15 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Only for the SKaiNET embedder published by its standalone build; nothing else may
+        // resolve from the local repository.
+        mavenLocal {
+            content {
+                includeModule("com.ayushig.localrag", "localrag-embedder-skainet")
+                // The KMP umbrella above redirects JVM consumers to this variant artifact.
+                includeModule("com.ayushig.localrag", "localrag-embedder-skainet-jvm")
+            }
+        }
     }
 }
 

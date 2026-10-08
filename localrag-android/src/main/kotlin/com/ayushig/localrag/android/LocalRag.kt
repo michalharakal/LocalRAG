@@ -7,7 +7,9 @@ import android.util.Log
 import com.ayushig.localrag.android.internal.BundleLoader
 import com.ayushig.localrag.android.internal.AgentRunner
 import com.ayushig.localrag.android.internal.Generator
+import com.ayushig.localrag.android.internal.Embedder
 import com.ayushig.localrag.android.internal.QueryEmbedder
+import com.ayushig.localrag.android.internal.SkaiNetQueryEmbedder
 import com.ayushig.localrag.android.internal.SingleFlight
 import com.ayushig.localrag.android.internal.Retriever
 import com.ayushig.localrag.android.internal.SignatureVerifier
@@ -81,7 +83,7 @@ class LocalRag private constructor(
 
     private var bundle: Bundle? = null
     private var retriever: Retriever? = null
-    private var embedder: QueryEmbedder? = null
+    private var embedder: Embedder? = null
     private var generator: Generator? = null
 
     /**
@@ -196,7 +198,18 @@ class LocalRag private constructor(
         this.config = config
     }
 
-    private fun createEmbedder(bundle: Bundle): QueryEmbedder? {
+    private fun createEmbedder(bundle: Bundle): Embedder? {
+        // A bundle embedded by the SKaiNET sidecar names an embedder that ships compiled into
+        // this library, so it needs no model path and no host configuration: the manifest alone
+        // selects it, and the parity check still rules.
+        bundle.manifest.embedding?.let { embedding ->
+            if (embedding.modelId == SkaiNetQueryEmbedder.MODEL_ID) {
+                return SkaiNetQueryEmbedder.createIfCompatible(embedding) { reason ->
+                    Log.w(TAG, reason)
+                }
+            }
+        }
+
         val modelPath = config.embeddingModelPath ?: return null
         val embedding = bundle.manifest.embedding ?: run {
             Log.w(TAG, "an embedding model is configured but the bundle carries no vectors")
