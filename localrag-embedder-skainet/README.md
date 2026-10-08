@@ -68,3 +68,16 @@ prefixes, 256 dimensions, normalized vectors.
 Covered: dimensions and unit norm, determinism, cosine tracking token overlap (related text
 must clearly outscore unrelated), zero-vector behaviour for token-free text, and cross-platform
 golden parity.
+
+## Measured
+
+`SkaiNetEmbedderBenchmark` (instrumented, `:localrag-android:connectedDebugAndroidTest`),
+medians over 300 iterations after warmup:
+
+| | query embed (38 chars) | chunk embed (369 chars) | 53-chunk corpus |
+|---|---|---|---|
+| Pixel 8a, Android 17, arm64 | 249 µs (p90 484) | 362 µs (p90 476) | ~19 ms |
+| JVM, Apple Silicon (sidecar path) | — | ~35 µs | ~2 ms |
+
+A query embed is three orders of magnitude inside the retrieval path's latency budget, and
+re-embedding the demo corpus costs less than a single animation frame budget per ~3 chunks.
